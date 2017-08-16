@@ -20,7 +20,7 @@ description := "sbt plugin to merge webapps from dependencies"
 
 libraryDependencies ++= {
 	//val ssysCoreVersion = "1.2.100"
-	val ssysCoreVersion = "1.3-SNAPSHOT"
+	val ssysCoreVersion = "1.4-SNAPSHOT"
 	Seq(
     		"com.simplesys.core" %% "common" % ssysCoreVersion,
     		"com.simplesys.core" %% "xml-extender" % ssysCoreVersion
