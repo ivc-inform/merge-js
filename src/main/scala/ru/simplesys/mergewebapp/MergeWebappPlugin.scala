@@ -9,7 +9,7 @@ import java.util.zip.ZipInputStream
 import com.simplesys.common.Strings._
 import sbt.ErrorHandling._
 import sbt.Keys._
-import sbt.Using.{fileInputStream, fileOutputStream, zipInputStream}
+import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
 import sbt._
 
 import scala.collection.mutable.HashSet
@@ -160,7 +160,7 @@ object MergeWebappPlugin extends AutoPlugin {
         }
 
     )) ++ Seq[Setting[_]](
-        resourceGenerators in Compile <+= merge in MergeWebappConfig
+        resourceGenerators in Compile += merge in MergeWebappConfig
     )
 }
 
