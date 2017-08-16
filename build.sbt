@@ -2,15 +2,11 @@ sbtPlugin := true
 
 name := "merge-js"
 
-//enablePlugins(GitVersioning)
-
 organization := "ru.simplesys"
 
-version := "1.0.9"
+version := "1.0.9-SNAPSHOT"
 
-//version := "1.0.8-SNAPSHOT"
-
-scalaVersion := "2.10.6"
+scalaVersion := "2.12.3"
 
 scalacOptions := Seq(
     "-feature",
@@ -23,8 +19,8 @@ scalacOptions := Seq(
 description := "sbt plugin to merge webapps from dependencies"
 
 libraryDependencies ++= {
-	val ssysCoreVersion = "1.2.100"
-	//val ssysCoreVersion = "1.2-SNAPSHOT"
+	//val ssysCoreVersion = "1.2.100"
+	val ssysCoreVersion = "1.3-SNAPSHOT"
 	Seq(
     		"com.simplesys.core" %% "common" % ssysCoreVersion,
     		"com.simplesys.core" %% "xml-extender" % ssysCoreVersion
@@ -40,6 +36,4 @@ publishArtifact in(Compile, packageDoc) := false
 publishArtifact in(Compile, packageSrc) := true
 
 publishMavenStyle := true
-
-git.baseVersion := "1.0.11"
 

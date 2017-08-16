@@ -37,9 +37,7 @@ object MergeWebappPlugin extends AutoPlugin {
         indexFileName := "IncludeModules",
         //internalSettingFileName := "lastSaveMappingSettings.ignore",
 
-        dirIndexFileNamePath <<= (sourceDirectory in Compile) {
-            _ / "webapp" / "javascript"
-        },
+        dirIndexFileNamePath := (sourceDirectory in Compile).value / "webapp" / "javascript",
         currentProjectCoffeeDevelopedDirPath := (sourceDirectory in Compile).value / "webapp" / "coffeescript",
         merge := {
             val out = streams.value
