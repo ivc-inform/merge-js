@@ -5,7 +5,4 @@ publishTo <<= version { (v: String) =>
   else
     Some("releases"  at corporateRepo + "artifactory/libs-release-local")
 }
-
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-
-overridePublishSettings
