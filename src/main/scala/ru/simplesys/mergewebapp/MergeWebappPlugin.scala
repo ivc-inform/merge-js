@@ -4,22 +4,25 @@ package mergewebapp
 import java.io.{File, InputStream}
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.zip.ZipInputStream
 
 import com.simplesys.common.Strings._
+import com.simplesys.io._
 import sbt.ErrorHandling._
 import sbt.Keys._
-import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
 import sbt._
+import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
 
 import scala.collection.mutable.HashSet
 import scala.xml.{Elem, XML, Node ⇒ XmlNode}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import scala.util.{Failure, Success, Try}
 
 object MergeWebappPlugin extends AutoPlugin {
+
+    implicit class LocalDateTimeOpts(ldt: LocalDateTime) {
+        def asString: String = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+    }
 
     override def requires = sbt.plugins.JvmPlugin
     override lazy val projectSettings: Seq[Setting[_]] = mergeWebappSettings
@@ -116,8 +119,10 @@ object MergeWebappPlugin extends AutoPlugin {
                 m.mapping.foreach { mp =>
                     val prependPath = mp.destination.mkString("""/""") + """/"""
                     val libIndexFile = mp.destinationDir(srcDir) / iFileName
-                    if (!libIndexFile.exists())
+                    if (!libIndexFile.exists()) {
                         libIndexFile.createNewFile()
+                        libIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
+                    }
 
                     if (libIndexFile.exists()) {
                         logger.debug(s"merger plugin: reading IncludeModules as ${libIndexFile.getAbsolutePath}")
@@ -131,8 +136,10 @@ object MergeWebappPlugin extends AutoPlugin {
             val currGenPath = currProjGenDir.relativeTo(srcDir).get.getPath + """/"""
             val currGenIndexFile = currProjGenDir / iFileName
 
-            if (!currGenIndexFile.exists())
+            if (!currGenIndexFile.exists()) {
                 currGenIndexFile.createNewFile()
+                currGenIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
+            }
 
 
             if (currGenIndexFile.exists()) {
@@ -162,7 +169,9 @@ object MergeWebappPlugin extends AutoPlugin {
             IO.delete(internalStoreFile)
             //val internalStore = iDirIndexFileName / intSettingFileName
             out.log.debug(s"merger plugin: storing current mappings at ${internalStoreFile.getAbsolutePath}")
-            val settings: Elem = <mappings>{currentMappingSettings.map(_.toXML)}</mappings>
+            val settings: Elem = <mappings>
+                {currentMappingSettings.map(_.toXML)}
+            </mappings>
 
             com.simplesys.xml.XML.save(internalStoreFile.getAbsolutePath, settings, scala.io.Codec.UTF8.toString())
             out.log.info(s"merger plugin: merging completed !!!!!!!!!!!!!!")
@@ -241,7 +250,19 @@ case class MappingPair(from: Seq[String], to: Option[Seq[String]]) {
 
     //def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair> //Так должно быть !!
 
-    def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair>
+    def toXML: Elem = <mappingPair>
+        <from>
+            {from.map(s => <level>
+            {s}
+        </level>)}
+        </from>{to.map { t =>
+            <to>
+                {t.map(s => <level>
+                {s}
+            </level>)}
+            </to>
+        } orNull}
+    </mappingPair>
 }
 
 object MappingPair {
@@ -261,10 +282,15 @@ object MappingPair {
 }
 
 case class MappingDirectories(organization: String, artifact: String, revision: String, mapping: Seq[MappingPair]) {
+
+    import MergeWebappPlugin._
+
     val isSnapshot = revision.toLowerCase.endsWith("-snapshot")
 
-    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}>
-        <content>{mapping.map(_.toXML)}</content>
+    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().asString}>
+        <content>
+            {mapping.map(_.toXML)}
+        </content>
     </mapping>
 
     def deleteUnpacked(srcDir: File)(implicit logger: Logger): Unit = {
