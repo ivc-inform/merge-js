@@ -4,18 +4,19 @@ package mergewebapp
 import java.io.{File, InputStream}
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.zip.ZipInputStream
 
 import com.simplesys.common.Strings._
 import sbt.ErrorHandling._
 import sbt.Keys._
-import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
 import sbt._
+import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
 
 import scala.collection.mutable.HashSet
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML, Node ⇒ XmlNode}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 object MergeWebappPlugin extends AutoPlugin {
 
@@ -71,16 +72,21 @@ object MergeWebappPlugin extends AutoPlugin {
 
             val internalStoreFile = iDirIndexFileName / intSettingFileName
             val previousMappingSettings: Seq[MappingDirectories] = {
-                if (internalStoreFile.exists()) {
-                    out.log.debug(s"merger plugin: loading previous mappings from ${internalStoreFile.getAbsolutePath}")
-                    val loaded = XML.loadFile(iDirIndexFileName / intSettingFileName)
-                    val mapp = (loaded \\ "mapping").map(n => MappingDirectories(n))
-                    mapp
-                } else {
-                    out.log.debug(s"merger plugin: previous mappings save file not found")
-                    Seq.empty
+                Try {
+                    if (!internalStoreFile.exists())
+                        internalStoreFile.createNewFile()
+                    else
+                        true
+                } match {
+                    case Success(_) ⇒
+                        out.log.debug(s"merger plugin: loading previous mappings from ${internalStoreFile.getAbsolutePath}")
+                        val loaded = XML.loadFile(iDirIndexFileName / intSettingFileName)
+                        val mapp = (loaded \\ "mapping").map(n => MappingDirectories(n))
+                        mapp
+                    case Failure(e) ⇒
+                        out.log.error(e.getMessage)
+                        Seq.empty
                 }
-
             }
 
             val toDelete = previousMappingSettings.filter { p =>
@@ -152,7 +158,9 @@ object MergeWebappPlugin extends AutoPlugin {
             IO.delete(internalStoreFile)
             //val internalStore = iDirIndexFileName / intSettingFileName
             out.log.debug(s"merger plugin: storing current mappings at ${internalStoreFile.getAbsolutePath}")
-            val settings: Elem = <mappings>{currentMappingSettings.map(_.toXML)}</mappings>
+            val settings: Elem = <mappings>
+                {currentMappingSettings.map(_.toXML)}
+            </mappings>
 
             com.simplesys.xml.XML.save(internalStoreFile.getAbsolutePath, settings, scala.io.Codec.UTF8.toString())
             out.log.info(s"merger plugin: merging completed !!!!!!!!!!!!!!")
@@ -231,7 +239,18 @@ case class MappingPair(from: Seq[String], to: Option[Seq[String]]) {
 
     //def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair> //Так должно быть !!
 
-    def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair>
+    def toXML: Elem = <mappingPair>
+        <from>
+            {from.map(s => <level>
+            {s}
+        </level>)}
+        </from>{to.map { t => <to>
+            {t.map(s => <level>
+                {s}
+            </level>)}
+        </to>
+        } orNull}
+    </mappingPair>
 }
 
 object MappingPair {
@@ -254,7 +273,9 @@ case class MappingDirectories(organization: String, artifact: String, revision: 
     val isSnapshot = revision.toLowerCase.endsWith("-snapshot")
 
     def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}>
-        <content>{mapping.map(_.toXML)}</content>
+        <content>
+            {mapping.map(_.toXML)}
+        </content>
     </mapping>
 
     def deleteUnpacked(srcDir: File)(implicit logger: Logger): Unit = {
