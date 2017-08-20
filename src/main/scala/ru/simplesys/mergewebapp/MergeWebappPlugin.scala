@@ -14,6 +14,8 @@ import sbt._
 
 import scala.collection.mutable.HashSet
 import scala.xml.{Elem, XML, Node ⇒ XmlNode}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object MergeWebappPlugin extends AutoPlugin {
 
@@ -68,7 +70,7 @@ object MergeWebappPlugin extends AutoPlugin {
             }
 
             val internalStoreFile = iDirIndexFileName / intSettingFileName
-            val previousMappingSettings = {
+            val previousMappingSettings: Seq[MappingDirectories] = {
                 if (internalStoreFile.exists()) {
                     out.log.debug(s"merger plugin: loading previous mappings from ${internalStoreFile.getAbsolutePath}")
                     val loaded = XML.loadFile(iDirIndexFileName / intSettingFileName)
@@ -150,9 +152,7 @@ object MergeWebappPlugin extends AutoPlugin {
             IO.delete(internalStoreFile)
             //val internalStore = iDirIndexFileName / intSettingFileName
             out.log.debug(s"merger plugin: storing current mappings at ${internalStoreFile.getAbsolutePath}")
-            val settings: Elem = <mappings>
-                {currentMappingSettings.map(_.toXML)}
-            </mappings>
+            val settings: Elem = <mappings>{currentMappingSettings.map(_.toXML)}</mappings>
 
             com.simplesys.xml.XML.save(internalStoreFile.getAbsolutePath, settings, scala.io.Codec.UTF8.toString())
             out.log.info(s"merger plugin: merging completed !!!!!!!!!!!!!!")
@@ -230,18 +230,8 @@ case class MappingPair(from: Seq[String], to: Option[Seq[String]]) {
     def sourceDir(relativeDir: File) = from.foldLeft(relativeDir)((path, x) => path / x)
 
     //def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair> //Так должно быть !!
-    def toXML: Elem = <mappingPair>
-        <from>
-            {from.map(s => <level>
-            {s}
-        </level>)}
-        </from>{to.map { t => <to>
-            {t.map(s => <level>
-                {s}
-            </level>)}
-        </to>
-        } orNull}
-    </mappingPair>
+
+    def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair>
 }
 
 object MappingPair {
@@ -263,10 +253,8 @@ object MappingPair {
 case class MappingDirectories(organization: String, artifact: String, revision: String, mapping: Seq[MappingPair]) {
     val isSnapshot = revision.toLowerCase.endsWith("-snapshot")
 
-    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision}>
-        <content>
-            {mapping.map(_.toXML)}
-        </content>
+    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}>
+        <content>{mapping.map(_.toXML)}</content>
     </mapping>
 
     def deleteUnpacked(srcDir: File)(implicit logger: Logger): Unit = {
