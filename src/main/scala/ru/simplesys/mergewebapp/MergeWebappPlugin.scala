@@ -141,7 +141,6 @@ object MergeWebappPlugin extends AutoPlugin {
                 currGenIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
             }
 
-
             if (currGenIndexFile.exists()) {
                 logger.debug(s"merger plugin: reading IncludeModules as ${currGenIndexFile.getAbsolutePath}")
                 index ++= IO.readLines(currGenIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currGenPath + x)
@@ -150,6 +149,12 @@ object MergeWebappPlugin extends AutoPlugin {
 
             val currDevPath = currProjDevDir.relativeTo(srcDir).get.getPath + """/"""
             val currDevIndexFile = currProjDevDir / iFileName
+
+            if (!currDevIndexFile.exists()) {
+                currDevIndexFile.createNewFile()
+                currDevIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
+            }
+
             if (currDevIndexFile.exists()) {
                 logger.debug(s"merger plugin: reading IncludeModules as ${currDevIndexFile.getAbsolutePath}")
                 index ++= IO.readLines(currDevIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currDevPath + x)
