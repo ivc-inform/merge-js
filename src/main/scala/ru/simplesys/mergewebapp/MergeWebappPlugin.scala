@@ -166,9 +166,8 @@ object MergeWebappPlugin extends AutoPlugin {
             val currDevCsIndexFile = currProCsDevDir / iFileName
 
             if (!currDevCsIndexFile.exists()) {
-                val _currDevCsPath = currDevCsPath.asPath
-                if (!_currDevCsPath.exists)
-                    _currDevCsPath.createDirectory()
+                if (!currProCsDevDir.exists())
+                    com.simplesys.file.Path(currProCsDevDir).createDirectory()
 
                 currDevCsIndexFile.createNewFile()
                 currDevCsIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
