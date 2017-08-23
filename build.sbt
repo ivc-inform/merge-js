@@ -23,7 +23,8 @@ libraryDependencies ++= {
 	val ssysCoreVersion = "1.4-SNAPSHOT"
 	Seq(
     		"com.simplesys.core" %% "common" % ssysCoreVersion,
-    		"com.simplesys.core" %% "xml-extender" % ssysCoreVersion
+    		"com.simplesys.core" %% "xml-extender" % ssysCoreVersion,
+    		"com.simplesys.core" %% "scala-io-extender" % ssysCoreVersion
 	)
 }	
 

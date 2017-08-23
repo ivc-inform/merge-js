@@ -14,6 +14,7 @@ import sbt.ErrorHandling._
 import sbt.Keys._
 import sbt._
 import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
+import com.simplesys.io._
 
 import scala.collection.mutable.HashSet
 import scala.xml.{Elem, XML, Node ⇒ XmlNode}
@@ -165,6 +166,10 @@ object MergeWebappPlugin extends AutoPlugin {
             val currDevCsIndexFile = currProCsDevDir / iFileName
 
             if (!currDevCsIndexFile.exists()) {
+                val _currDevCsPath = currDevCsPath.asPath
+                if (!_currDevCsPath.exists)
+                    _currDevCsPath.createDirectory()
+
                 currDevCsIndexFile.createNewFile()
                 currDevCsIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
             }
