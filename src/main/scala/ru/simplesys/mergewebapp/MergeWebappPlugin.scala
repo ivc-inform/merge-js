@@ -163,6 +163,12 @@ object MergeWebappPlugin extends AutoPlugin {
 
             val currDevCsPath = currProjGenDir.relativeTo(srcDir).get.getPath + """/coffeescript/"""
             val currDevCsIndexFile = currProCsDevDir / iFileName
+
+            if (!currDevCsIndexFile.exists()) {
+                currDevCsIndexFile.createNewFile()
+                currDevCsIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
+            }
+
             if (currDevCsIndexFile.exists()) {
                 logger.debug(s"merger plugin: reading IncludeModules as ${currDevCsIndexFile.getAbsolutePath}")
                 index ++= IO.readLines(currDevCsIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currDevCsPath + x.replace(".coffee", ".js"))
