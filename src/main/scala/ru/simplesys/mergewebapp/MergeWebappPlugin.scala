@@ -152,6 +152,9 @@ object MergeWebappPlugin extends AutoPlugin {
             val currDevIndexFile = currProjDevDir / iFileName
 
             if (!currDevIndexFile.exists()) {
+                if (!currProjDevDir.exists())
+                    com.simplesys.file.Path(currProjDevDir).createDirectory()
+
                 currDevIndexFile.createNewFile()
                 currDevIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
             }
