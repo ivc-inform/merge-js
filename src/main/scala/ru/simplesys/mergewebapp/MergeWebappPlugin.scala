@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.util.zip.ZipInputStream
 
 import com.simplesys.common.Strings._
+import com.simplesys.file.defaultfs.DefaultPath
 import com.simplesys.io._
 import sbt.ErrorHandling._
 import sbt.Keys._
@@ -43,7 +44,6 @@ object MergeWebappPlugin extends AutoPlugin {
 
     lazy val mergeWebappSettings: Seq[Setting[_]] = inConfig(MergeWebappConfig)(Seq[Setting[_]](
         indexFileName := "IncludeModules",
-        //internalSettingFileName := "lastSaveMappingSettings.ignore",
 
         dirIndexFileNamePath := (sourceDirectory in Compile).value / "webapp" / "javascript",
         currentProjectCoffeeDevelopedDirPath := (sourceDirectory in Compile).value / "webapp" / "coffeescript",
@@ -51,10 +51,10 @@ object MergeWebappPlugin extends AutoPlugin {
             val out = streams.value
             val iFileName = indexFileName.value
             val iDirIndexFileName = dirIndexFileNamePath.value
-            val currProjGenDir = currentProjectGenerationDirPath.value
-            val currProjDevDir = currentProjectDevelopedDirPath.value
-            val currProCsDevDir = currentProjectCoffeeDevelopedDirPath.value
-            val srcDir = (sourceDirectory in Compile).value
+            val currProjGenDir = currentProjectGenerationDirPath.value.checkDirectory
+            val currProjDevDir = currentProjectDevelopedDirPath.value.checkDirectory
+            val currProCsDevDir = currentProjectCoffeeDevelopedDirPath.value.checkDirectory
+            val srcDir = (sourceDirectory in Compile).value.checkDirectory
             val managedcp = (dependencyClasspath in Compile).value
             val libraryDeps = (libraryDependencies in Compile).value
             val tempDir = taskTemporaryDirectory.value
@@ -149,12 +149,9 @@ object MergeWebappPlugin extends AutoPlugin {
                 logger.error(s"merger plugin: IncludeModules is not exists for generated JS at ${currGenIndexFile.getAbsolutePath}")
 
             val currDevPath = currProjDevDir.relativeTo(srcDir).get.getPath + """/"""
-            val currDevIndexFile = currProjDevDir / iFileName
+            val currDevIndexFile = currProjDevDir.checkDirectory / iFileName
 
             if (!currDevIndexFile.exists()) {
-                if (!currProjDevDir.exists())
-                    com.simplesys.file.Path(currProjDevDir).createDirectory()
-
                 currDevIndexFile.createNewFile()
                 currDevIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
             }
@@ -166,12 +163,9 @@ object MergeWebappPlugin extends AutoPlugin {
                 logger.error(s"merger plugin: IncludeModules is not exists for developed JS at ${currDevIndexFile.getAbsolutePath}")
 
             val currDevCsPath = currProjGenDir.relativeTo(srcDir).get.getPath + """/coffeescript/"""
-            val currDevCsIndexFile = currProCsDevDir / iFileName
+            val currDevCsIndexFile = currProCsDevDir.checkDirectory / iFileName
 
             if (!currDevCsIndexFile.exists()) {
-                if (!currProCsDevDir.exists())
-                    com.simplesys.file.Path(currProCsDevDir).createDirectory()
-
                 currDevCsIndexFile.createNewFile()
                 currDevCsIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
             }
