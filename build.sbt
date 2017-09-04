@@ -4,7 +4,7 @@ name := "merge-js"
 
 organization := "ru.simplesys"
 
-version := "1.0.10-SNAPSHOT"
+version := "1.0.11"
 
 scalaVersion := "2.12.3"
 
