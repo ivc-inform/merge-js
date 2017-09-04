@@ -4,7 +4,7 @@ name := "merge-js"
 
 organization := "ru.simplesys"
 
-version := "1.0.11"
+version := "1.0.12"
 
 scalaVersion := "2.12.3"
 
@@ -19,8 +19,8 @@ scalacOptions := Seq(
 description := "sbt plugin to merge webapps from dependencies"
 
 libraryDependencies ++= {
-	//val ssysCoreVersion = "1.2.100"
-	val ssysCoreVersion = "1.4-SNAPSHOT"
+	val ssysCoreVersion = "1.4.0.2"
+	//val ssysCoreVersion = "1.4-SNAPSHOT"
 	Seq(
     		"com.simplesys.core" %% "common" % ssysCoreVersion,
     		"com.simplesys.core" %% "xml-extender" % ssysCoreVersion,
