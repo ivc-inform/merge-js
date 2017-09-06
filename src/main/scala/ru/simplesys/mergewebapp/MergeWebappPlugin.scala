@@ -42,8 +42,7 @@ object MergeWebappPlugin extends AutoPlugin {
 
     lazy val mergeWebappSettings: Seq[Setting[_]] = inConfig(MergeWebappConfig)(Seq[Setting[_]](
         indexFileName := "IncludeModules",
-
-        dirIndexFileNamePath := (sourceDirectory in Compile).value / "webapp" / "javascript",
+        
         merge := {
             val out = streams.value
             val iFileName = indexFileName.value
