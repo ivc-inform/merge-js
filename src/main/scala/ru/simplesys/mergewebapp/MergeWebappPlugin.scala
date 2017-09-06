@@ -33,29 +33,23 @@ object MergeWebappPlugin extends AutoPlugin {
 
     val merge = taskKey[Seq[File]]("Merge webapp folder")
     val mergeMapping = settingKey[Seq[((String, String), Seq[(Seq[String], Option[Seq[String]])])]]("Per-library folder mappings")
-    val dirIndexFileNamePath = settingKey[File]("Dir where root index file will be placed")
-    val currentProjectGenerationDirPath = settingKey[File]("Current project generation JS dir path")
-    val indexFileName = settingKey[String]("JavaScript index file name")
+    val webAppDirPath = settingKey[File]("Current project generation JS dir path")
 
     val intSettingFileName = "lastSaveMappingSettings.ignore"
 
 
     lazy val mergeWebappSettings: Seq[Setting[_]] = inConfig(MergeWebappConfig)(Seq[Setting[_]](
-        indexFileName := "IncludeModules",
-        
+
         merge := {
             val out = streams.value
-            val iFileName = indexFileName.value
-            val iDirIndexFileName = dirIndexFileNamePath.value
-            val currProjGenDir = currentProjectGenerationDirPath.value.checkDirectory
-            val srcDir = (sourceDirectory in Compile).value.checkDirectory
+            val webAppDir = webAppDirPath.value.checkDirectory
+            val iDirIndexFileName = (webAppDir / "javascript").checkDirectory
             val managedcp = (dependencyClasspath in Compile).value
             val libraryDeps = (libraryDependencies in Compile).value
             val tempDir = taskTemporaryDirectory.value
             val scalaVer = scalaVersion.value
             val scalaVerBinary = scalaBinaryVersion.value
             val mapping = mergeMapping.value
-
 
             implicit val logger = out.log
 
@@ -91,64 +85,26 @@ object MergeWebappPlugin extends AutoPlugin {
                 !previousMappingSettings.contains(c) || c.isSnapshot
             }
 
-
             currentMappingSettings.withFilter { mapp => !toAdd.contains(mapp) }.foreach { m =>
                 out.log.info(s"merger plugin: skipping ${m.organization}:${m.artifact}:${m.revision} since version and mappings are the same")
             }
 
-
             toDelete.foreach { lib =>
-                lib.deleteUnpacked(srcDir)
+                lib.deleteUnpacked(webAppDir)
             }
 
             toAdd.foreach { lib =>
-                lib.unpackMappings(managedcp, tempDir, srcDir)
+                lib.unpackMappings(managedcp, tempDir, webAppDir)
             }
 
-            val rootIndexFile = iDirIndexFileName / iFileName
             val index = scala.collection.mutable.ListBuffer.empty[String]
-
-            out.log.info(s"merger plugin: rebuilding IncludeModules at ${rootIndexFile.getAbsolutePath}")
-
-            currentMappingSettings.foreach { m =>
-                m.mapping.foreach { mp =>
-                    val prependPath = mp.destination.mkString("""/""") + """/"""
-                    val libIndexFile = mp.destinationDir(srcDir) / iFileName
-                    if (!libIndexFile.exists()) {
-                        libIndexFile.createNewFile()
-                        libIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
-                    }
-
-                    if (libIndexFile.exists()) {
-                        logger.debug(s"merger plugin: reading IncludeModules as ${libIndexFile.getAbsolutePath}")
-                        index ++= IO.readLines(libIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.filter(_.indexOf(".coffee") == -1).map(x => prependPath + x)
-                    } else
-                        logger.error(s"merger plugin: IncludeModules is not exists for ${m.organization}:${m.artifact}:${m.revision} at ${libIndexFile.getAbsolutePath}")
-
-                }
-            }
-
-            val currGenPath = currProjGenDir.getPath + """/"""
-            val currGenIndexFile = currProjGenDir / iFileName
-
-            if (!currGenIndexFile.exists()) {
-                currGenIndexFile.createNewFile()
-                currGenIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
-            }
-
-            if (currGenIndexFile.exists()) {
-                logger.debug(s"merger plugin: reading IncludeModules as ${currGenIndexFile.getAbsolutePath}")
-                index ++= IO.readLines(currGenIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currGenPath + x)
-            } else
-                logger.error(s"merger plugin: IncludeModules is not exists for generated JS at ${currGenIndexFile.getAbsolutePath}")
-
-
-            IO.writeLines(rootIndexFile, index, StandardCharsets.UTF_8, false)
 
             IO.delete(internalStoreFile)
 
             out.log.debug(s"merger plugin: storing current mappings at ${internalStoreFile.getAbsolutePath}")
-            val settings: Elem = <mappings>{currentMappingSettings.map(_.toXML)}</mappings>
+            val settings: Elem = <mappings>
+                {currentMappingSettings.map(_.toXML)}
+            </mappings>
 
             com.simplesys.xml.XML.save(internalStoreFile.getAbsolutePath, settings, scala.io.Codec.UTF8.toString())
             out.log.info(s"!!!!!!!!!!!!!!!!!!!!!! merger plugin: merging completed !!!!!!!!!!!!!!")
