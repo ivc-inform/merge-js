@@ -35,8 +35,6 @@ object MergeWebappPlugin extends AutoPlugin {
     val mergeMapping = settingKey[Seq[((String, String), Seq[(Seq[String], Option[Seq[String]])])]]("Per-library folder mappings")
     val dirIndexFileNamePath = settingKey[File]("Dir where root index file will be placed")
     val currentProjectGenerationDirPath = settingKey[File]("Current project generation JS dir path")
-    val currentProjectDevelopedDirPath = settingKey[File]("Current project developed JS dir path")
-    val currentProjectCoffeeDevelopedDirPath = settingKey[File]("Current project developed CoffeeScript dir path")
     val indexFileName = settingKey[String]("JavaScript index file name")
 
     val intSettingFileName = "lastSaveMappingSettings.ignore"
@@ -46,14 +44,11 @@ object MergeWebappPlugin extends AutoPlugin {
         indexFileName := "IncludeModules",
 
         dirIndexFileNamePath := (sourceDirectory in Compile).value / "webapp" / "javascript",
-        currentProjectCoffeeDevelopedDirPath := (sourceDirectory in Compile).value / "webapp" / "coffeescript",
         merge := {
             val out = streams.value
             val iFileName = indexFileName.value
             val iDirIndexFileName = dirIndexFileNamePath.value
             val currProjGenDir = currentProjectGenerationDirPath.value.checkDirectory
-            val currProjDevDir = currentProjectDevelopedDirPath.value.checkDirectory
-            val currProCsDevDir = currentProjectCoffeeDevelopedDirPath.value.checkDirectory
             val srcDir = (sourceDirectory in Compile).value.checkDirectory
             val managedcp = (dependencyClasspath in Compile).value
             val libraryDeps = (libraryDependencies in Compile).value
@@ -134,7 +129,7 @@ object MergeWebappPlugin extends AutoPlugin {
                 }
             }
 
-            val currGenPath = currProjGenDir.relativeTo(srcDir).get.getPath + """/"""
+            val currGenPath = currProjGenDir.getPath + """/"""
             val currGenIndexFile = currProjGenDir / iFileName
 
             if (!currGenIndexFile.exists()) {
@@ -148,45 +143,16 @@ object MergeWebappPlugin extends AutoPlugin {
             } else
                 logger.error(s"merger plugin: IncludeModules is not exists for generated JS at ${currGenIndexFile.getAbsolutePath}")
 
-            val currDevPath = currProjDevDir.relativeTo(srcDir).get.getPath + """/"""
-            val currDevIndexFile = currProjDevDir.checkDirectory / iFileName
-
-            if (!currDevIndexFile.exists()) {
-                currDevIndexFile.createNewFile()
-                currDevIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
-            }
-
-            if (currDevIndexFile.exists()) {
-                logger.debug(s"merger plugin: reading IncludeModules as ${currDevIndexFile.getAbsolutePath}")
-                index ++= IO.readLines(currDevIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currDevPath + x)
-            } else
-                logger.error(s"merger plugin: IncludeModules is not exists for developed JS at ${currDevIndexFile.getAbsolutePath}")
-
-            val currDevCsPath = currProjGenDir.relativeTo(srcDir).get.getPath + """/coffeescript/"""
-            val currDevCsIndexFile = currProCsDevDir.checkDirectory / iFileName
-
-            if (!currDevCsIndexFile.exists()) {
-                currDevCsIndexFile.createNewFile()
-                currDevCsIndexFile <== s"## Auto Created at: ${LocalDateTime.now().asString}"
-            }
-
-            if (currDevCsIndexFile.exists()) {
-                logger.debug(s"merger plugin: reading IncludeModules as ${currDevCsIndexFile.getAbsolutePath}")
-                index ++= IO.readLines(currDevCsIndexFile, StandardCharsets.UTF_8).filter(_.trim != "").withOutComment.map(x => currDevCsPath + x.replace(".coffee", ".js"))
-            } else
-                logger.error(s"merger plugin: IncludeModules is not exists for developed CoffeeScript at ${currDevCsIndexFile.getAbsolutePath}")
 
             IO.writeLines(rootIndexFile, index, StandardCharsets.UTF_8, false)
 
             IO.delete(internalStoreFile)
-            //val internalStore = iDirIndexFileName / intSettingFileName
+
             out.log.debug(s"merger plugin: storing current mappings at ${internalStoreFile.getAbsolutePath}")
-            val settings: Elem = <mappings>
-                {currentMappingSettings.map(_.toXML)}
-            </mappings>
+            val settings: Elem = <mappings>{currentMappingSettings.map(_.toXML)}</mappings>
 
             com.simplesys.xml.XML.save(internalStoreFile.getAbsolutePath, settings, scala.io.Codec.UTF8.toString())
-            out.log.info(s"merger plugin: merging completed !!!!!!!!!!!!!!")
+            out.log.info(s"!!!!!!!!!!!!!!!!!!!!!! merger plugin: merging completed !!!!!!!!!!!!!!")
             Seq()
         }
 
