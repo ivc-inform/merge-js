@@ -2,29 +2,21 @@ package com.simplesys
 package mergewebapp
 
 import java.io.{File, InputStream}
-import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.zip.ZipInputStream
 
 import com.simplesys.common.Strings._
-import com.simplesys.file.defaultfs.DefaultPath
 import com.simplesys.io._
 import sbt.ErrorHandling._
 import sbt.Keys._
 import sbt._
 import sbt.io.Using.{fileInputStream, fileOutputStream, zipInputStream}
-import com.simplesys.io._
 
 import scala.collection.mutable.HashSet
 import scala.xml.{Elem, XML, Node ⇒ XmlNode}
 
 object MergeWebappPlugin extends AutoPlugin {
-
-    implicit class LocalDateTimeOpts(ldt: LocalDateTime) {
-        def asString: String = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-    }
 
     override def requires = sbt.plugins.JvmPlugin
     override lazy val projectSettings: Seq[Setting[_]] = mergeWebappSettings
@@ -216,11 +208,9 @@ object MappingPair {
 
 case class MappingDirectories(organization: String, artifact: String, revision: String, mapping: Seq[MappingPair]) {
 
-    import MergeWebappPlugin._
-
     val isSnapshot = revision.toLowerCase.endsWith("-snapshot")
 
-    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().asString}>
+    def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().asString()}>
         <content>
             {mapping.map(_.toXML)}
         </content>
