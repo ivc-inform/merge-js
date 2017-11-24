@@ -133,6 +133,7 @@ object UnpackUtils {
 
     private def extract(from: ZipInputStream, toDirectory: File, filter: NameFilter) = {
         val set = new HashSet[File]
+
         def next() {
             val entry = from.getNextEntry
             if (entry == null)
@@ -161,6 +162,7 @@ object UnpackUtils {
                 next()
             }
         }
+
         next()
         Set() ++ set
     }
@@ -175,19 +177,9 @@ case class MappingPair(from: Seq[String], to: Option[Seq[String]]) {
 
     //def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair> //Так должно быть !!
 
-    def toXML: Elem = <mappingPair>
-        <from>
-            {from.map(s => <level>
-            {s}
-        </level>)}
-        </from>{to.map { t =>
-            <to>
-                {t.map(s => <level>
-                {s}
-            </level>)}
-            </to>
-        } orNull}
-    </mappingPair>
+    //@formatter:off
+    def toXML: Elem = <mappingPair><from>{from.map(s => <level>{s}</level>)}</from>{to.map { t => <to>{t.map(s => <level>{s}</level>)}</to>} orNull}</mappingPair>
+    //@formatter:on
 }
 
 object MappingPair {
@@ -210,11 +202,11 @@ case class MappingDirectories(organization: String, artifact: String, revision: 
 
     val isSnapshot = revision.toLowerCase.endsWith("-snapshot")
 
+    //@formatter:off
     def toXML: Elem = <mapping organization={organization} artifact={artifact} revision={revision} date={LocalDateTime.now().asString()}>
-        <content>
-            {mapping.map(_.toXML)}
-        </content>
+        <content>{mapping.map(_.toXML)}</content>
     </mapping>
+    //@formatter:on
 
     def deleteUnpacked(srcDir: File)(implicit logger: Logger): Unit = {
         logger.info(s"merger plugin: deleting directories for $organization:$artifact:$revision")
